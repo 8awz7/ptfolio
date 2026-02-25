@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bunker Gaming Store</title>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<style>
+:root{
+  --neon:#8cff00;
+  --bg:#050505;
+}
+
+body{
+  margin:0;
+  font-family:Arial, Helvetica, sans-serif;
+  background:var(--bg);
+  color:white;
+}
+
+header{
+  text-align:center;
+  padding:40px 20px;
+}
+
+h1{
+  color:var(--neon);
+  font-size:2.8rem;
+  letter-spacing:3px;
+}
+
+.subtitle{
+  opacity:.7;
+}
+
+.container{
+  max-width:1200px;
+  margin:auto;
+  padding:20px;
+}
+
+.products-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:30px;
+}
+
+.product-card{
+  background:#0e0e0e;
+  border:1px solid var(--neon);
+  border-radius:15px;
+  overflow:hidden;
+  transition:.3s;
+}
+
+.product-card:hover{
+  transform:translateY(-6px) scale(1.02);
+  box-shadow:0 0 25px #8cff0050;
+}
+
+.canvas-container{
+  height:280px;
+  background:#000;
+  position:relative;
+}
+
+.product-info{
+  padding:20px;
+}
+
+.product-price{
+  color:var(--neon);
+  font-size:1.3rem;
+  font-weight:bold;
+}
+
+.btn{
+  margin-top:10px;
+  padding:12px;
+  width:100%;
+  background:var(--neon);
+  border:none;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.status-badge{
+  position:absolute;
+  top:10px;
+  right:10px;
+  font-size:12px;
+  background:black;
+  padding:5px 8px;
+  border:1px solid var(--neon);
+}
+
+.status-ok{color:#00ffae}
+.status-fallback{color:orange}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>BUNKER GAMING</h1>
+  <p class="subtitle">Tienda de hardware gamer </p>
+</header>
+
+<div class="container">
+<div class="products-grid">
+
+<article class="product-card">
+<div class="canvas-container" id="canvas-1">
+<span class="status-badge" id="status-1">Cargando...</span>
+</div>
+<div class="product-info">
+<h2>Silla Gamer</h2>
+<p>Ergonomía profesional para largas sesiones.</p>
+<div class="product-price">$299</div>
+<button class="btn">Comprar</button>
+</div>
+</article>
+
+<article class="product-card">
+<div class="canvas-container" id="canvas-2">
+<span class="status-badge" id="status-2">Cargando...</span>
+</div>
+<div class="product-info">
+<h2>Logitech G502</h2>
+<p>Precisión Lightspeed RealityScan.</p>
+<div class="product-price">$79</div>
+<button class="btn">Comprar</button>
+</div>
+</article>
+
+<article class="product-card">
+<div class="canvas-container" id="canvas-3">
+<span class="status-badge" id="status-3">Cargando...</span>
+</div>
+<div class="product-info">
+<h2>Headset Gamer</h2>
+<p>Sonido envolvente y confort premium.</p>
+<div class="product-price">$129</div>
+<button class="btn">Comprar</button>
+</div>
+</article>
+
+</div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { USDZLoader } from 'three/addons/loaders/USDZLoader.js'; // Cargador para la silla
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const products=[
+{
+ id:'canvas-1',
+ statusId:'status-1',
+ url:'Gaming_chair.usdz', // Archivo USDZ
+ type: 'usdz',
+ fallback:'box'
+},
+{
+ id:'canvas-2',
+ statusId:'status-2',
+ url:'logitech_g_g502_lightspeed_realityscan.zip/scene.gltf', // Ruta al GLTF del mouse
+ type: 'gltf',
+ fallback:'sphere'
+},
+{
+ id:'canvas-3',
+ statusId:'status-3',
+ url:'gaming_headset.zip/scene.gltf', // Ruta al GLTF del headset
+ type: 'gltf',
+ fallback:'torus'
+}
+];
+
+function fallback(type){
+const mat=new THREE.MeshStandardMaterial({color: 0x8cff00, wireframe: true});
+if(type==='sphere')return new THREE.Mesh(new THREE.SphereGeometry(1,32,32),mat);
+if(type==='torus')return new THREE.Mesh(new THREE.TorusKnotGeometry(1,0.3,100,16),mat);
+return new THREE.Mesh(new THREE.BoxGeometry(1.5,1.5,1.5),mat);
+}
+
+function init3D(p){
+const container=document.getElementById(p.id);
+const badge=document.getElementById(p.statusId);
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(45,container.clientWidth/container.clientHeight,0.1,100);
+camera.position.set(0,1,5);
+
+const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true});
+renderer.setSize(container.clientWidth,container.clientHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+container.appendChild(renderer.domElement);
+
+scene.add(new THREE.AmbientLight(0xffffff,1.5));
+const light=new THREE.DirectionalLight(0xffffff,2);
+light.position.set(5,10,7);
+scene.add(light);
+
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.enableZoom=false;
+controls.autoRotate=true;
+controls.autoRotateSpeed = 2;
+
+let loader;
+if(p.type === 'usdz') {
+    loader = new USDZLoader();
+} else {
+    loader = new GLTFLoader();
+}
+
+loader.load(
+ p.url,
+ (object)=>{
+ let model = p.type === 'gltf' ? object.scene : object;
+
+ // Centrado y escalado automático
+ const box=new THREE.Box3().setFromObject(model);
+ const center=box.getCenter(new THREE.Vector3());
+ const size=box.getSize(new THREE.Vector3()).length();
+
+ model.position.sub(center);
+ const scale=3.5/size; // Ajuste de escala visual
+ model.scale.setScalar(scale);
+
+ scene.add(model);
+ badge.textContent='3D Activo';
+ badge.className='status-badge status-ok';
+ },
+ undefined,
+ (err)=>{
+ console.error("Error cargando modelo:", err);
+ const model=fallback(p.fallback);
+ scene.add(model);
+ badge.textContent='Error / Fallback';
+ badge.className='status-badge status-fallback';
+ }
+);
+
+function animate(){
+requestAnimationFrame(animate);
+controls.update();
+renderer.render(scene,camera);
+}
+animate();
+
+// Ajuste al redimensionar ventana
+window.addEventListener('resize', () => {
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+});
+}
+
+products.forEach(init3D);
+</script>
+
+</body>
+</html>
